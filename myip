@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Internet_hostname is used to determine if you have internet connectivity. You should
+# Internet__ostname is used to determine if you have internet connectivity. You should
 # use an ip address which is _very_ likely to respond.
 internet_hostname = "1.1.1.1"
 
@@ -9,8 +9,8 @@ internet_hostname = "1.1.1.1"
 # whatever, really.
 iplist   = ["10.202.102.147"]
 
-# DNS will show you your local dns reslovers if set to 'yes'.
-dns      = 'yes'
+# DNS will show you your local dns resolvers if set to True.
+dns      =  True
 
 # Most computers have a local or loopback interface. Myip will include this if set
 # to True.
@@ -27,6 +27,7 @@ sys.tracebacklimit = 100
 import os
 import re
 import subprocess
+import netifaces as ifs
 from requests import get
 
 
@@ -83,7 +84,7 @@ if response == 0:
 
     # Get my public ip-address:
     ip = get('https://api.ipify.org').text
-    print('  Public IP address:.............................  {}'.format(ip))
+    print('  My public IP address:..........................  {}'.format(ip))
 
     # Get my dns-name:
     #txt = subprocess.check_output(["/usr/bin/host", str(ip)])
@@ -100,34 +101,60 @@ for x in iplist:
 
 
 # Fetch IP info
-txt = subprocess.check_output(["nmcli", "dev", "show"])
-lines = txt.splitlines()
-for line in lines: 
-
-    # Print interface name
-    regex = re.match(r".*GENERAL.DEVICE:.*", str(line))
-    if regex:
-        my_if = re.search(r"(\w+).$", str(line))
-        print("\n  Network interface.............................. ",my_if.group(1))
-
-    # Print ip address
-    regex = re.match(r".*IP4.ADDRESS.*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}.*", str(line))
-    if regex:
-        x = re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", str(line))
-        print("  IP-Address..................................... ",x.group())
-
-    # Print default gw
-    regex = re.match(r".*IP4.GATEWAY.*\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}.*", str(line))
-    if regex:
-        x = re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", str(line))
-        print("  Default-Gateway................................ ",checkip(x.group()))
+for interface in ifs.interfaces():
     
-    # Save dns resolvers
-    # If you want to see dns-resolvers in use:
-    if dns == 'yes':
-        regex = re.match(r".*DNS.*", str(line))
-        if regex:
-            x = re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", str(line))
-            print("  DNS-server..................................... ", checkip( x.group() ))
+    if len(ifs.ifaddresses(str(interface))) > 0:
+
+        # Print interface name
+        if bool(re.search('^lo', str(interface))) and not print_lo_if:
+            continue
+        print("\n  Network interface.............................. ",str(interface))
+
+        # Print ip address
+        my_if = ifs.ifaddresses(str(interface))
+        my_if = my_if[2][0]
+        print("  IP-Address..................................... ", str(my_if['addr']))
+
+        # Print netmask
+        print("  Netmask........................................ ", str(my_if['netmask']))
+
+
+# Print default gateway
+my_gw = ifs.gateways()['default'] 
+print("\n  Active default-Gateway......................... ", checkip(my_gw[2][0]) + " (" + str(my_gw[2][1]) + ")")
+
+
+# Print dns-servers
+if dns:
+    dns_servers = []
+
+    # Read ip-addresses from resolv.conf
+    ns_server = open("/etc/resolv.conf").read().split()
+    for item in ns_server:
+        if len( item.split(".") ) == 4:
+
+            # If Entry is a localhost ip, we need to fetch real servers from nmcli
+            if item == '127.0.1.1':
+
+                txt = subprocess.check_output(["nmcli", "dev", "show"])
+                lines = txt.splitlines()
+                for line in lines: 
+                    regex = re.match(r".*DNS.*", str(line))
+                    if regex:
+                        x = re.search(r"\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}", str(line))
+                        dns_servers.append(x.group())
+            else:
+               dns_servers.append(item)
+
+    # Print the servers we found
+    already_done_once = False
+    for entry in dns_servers:
+        if already_done_once:
+            print("                                                  ", entry)
+        else:
+            print("\n  DNS-server..................................... ", entry)
+            already_done_once = True
+
+
 
 print("\nDone.\n\n")
