@@ -152,7 +152,7 @@ if dns:
         if already_done_once:
             print("                                                  ", entry)
         else:
-            print("\n  DNS-server..................................... ", entry)
+            print("\n  DNS-servers.................................... ", entry)
             already_done_once = True
 
 
