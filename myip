@@ -7,7 +7,7 @@ internet_hostname = "1.1.1.1"
 # Ip list is a list of ip-addresses you would like to check each time you test
 # your internet connectivity. It could be a local server, an office host or
 # whatever, really.
-iplist   = ["10.202.102.147"]
+iplist   = []
 
 # DNS will show you your local dns resolvers if set to True.
 dns      =  True
