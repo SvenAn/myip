@@ -21,6 +21,8 @@ dns      =  True
 # to True.
 print_lo_if = False
 
+# Print dns name of the public ip-address
+print_public_dns_name = True
 
 # Check Python version.
 import sys
@@ -32,6 +34,7 @@ sys.tracebacklimit = 100
 import os
 import re
 import subprocess
+import socket
 import netifaces as ifs
 from requests import get
 
@@ -82,7 +85,10 @@ def find_gw_workaround():
     my_gw = re.split(r'\s+',str(my_gw.stdout))
     
     defaultgw = {}
-    defaultgw[2] = ( my_gw[4], my_gw[2] )
+    if my_gw[1] == 'dev':
+       defaultgw[2] = ( my_gw[4], my_gw[2] )
+    else:
+       defaultgw[2] = ( my_gw[2], my_gw[4] )
 
     return defaultgw
 
@@ -105,10 +111,15 @@ if response == 0:
     ip = get('https://api.ipify.org').text
     print('  My public IP address:..........................  {}'.format(ip))
 
-    # Get my dns-name:
-    #txt = subprocess.check_output(["/usr/bin/host", str(ip)])
-    #dnsname = re.search(r"\S+$", str(txt))
-    #print('  Public host name:..............................  ' + dnsname.group())
+    # Get my public dns name:
+    if print_public_dns_name:
+        try:
+            dns_name = socket.gethostbyaddr(ip)
+            dns_name = dns_name[0]
+        except socket.herror:
+            dns_name = '(no dns)'
+        print('  My public host name:...........................  ' + dns_name)
+
 
 else:
     print("  Internet connection............................  " + bcolors.FAIL + "FAILED" + bcolors.ENDC)
