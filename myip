@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+##  Myip version 0.01
+
+
 # Internet__ostname is used to determine if you have internet connectivity. You should
 # use an ip address which is _very_ likely to respond.
 internet_hostname = "1.1.1.1"
