@@ -103,8 +103,7 @@ for x in iplist:
 # Fetch IP info
 for interface in ifs.interfaces():
     
-    if len(ifs.ifaddresses(str(interface))) > 0:
-
+    if 2 in ifs.ifaddresses(interface).keys():
         # Print interface name
         if bool(re.search('^lo', str(interface))) and not print_lo_if:
             continue
