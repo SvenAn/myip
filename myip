@@ -3,7 +3,9 @@
 ##  Myip version 0.01
 ##  Only for IPv4. Support for IPv6 will be added later.
 
-# Internet__ostname is used to determine if you have internet connectivity. You should
+
+
+# Internet_hostname is used to determine if you have internet connectivity. You should
 # use an ip address which is _very_ likely to respond.
 internet_hostname = "1.1.1.1"
 
@@ -55,10 +57,12 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
+
 # Small sub-routine to ping a certain ip address.
 def pingip(ipaddress):
     pingresult = os.system("ping -c 1 -w 1 " + ipaddress + " > /dev/null")
     return (pingresult)
+
 
 
 # Small sub-routine to check an ip-address and add appropriate colors.
@@ -69,6 +73,19 @@ def checkip(ipaddress):
     else:
         ipaddress = bcolors.FAIL + ipaddress + bcolors.ENDC
     return (ipaddress)
+
+
+
+# Workaround until netifaces bug is fixed.
+def find_gw_workaround():
+    my_gw = subprocess.run(["ip", "route", "get", internet_hostname], stdout=subprocess.PIPE)
+    my_gw = str(my_gw.stdout)
+    my_gw = my_gw.split(" ")
+    
+    defaultgw = {}
+    defaultgw[2] = ( my_gw[5], my_gw[2] )
+
+    return defaultgw
 
 
 
@@ -125,7 +142,13 @@ for interface in ifs.interfaces():
     #elif 10 in ifs.ifaddresses(interface).keys():
 
 # Print default gateway
-my_gw = ifs.gateways()['default'] 
+# Due to a bug in netifaces, the gw in default is not always correct. We therefore need to make a
+# Temporary workaround in find_gw_workaround.  https://github.com/al45tair/netifaces/issues/53
+
+# Uncomment this line to test netifaces bug:
+# my_gw = ifs.gateways()['default'] 
+
+my_gw = find_gw_workaround()
 print("\n  Active default-Gateway......................... ", checkip(my_gw[2][0]) + " (" + str(my_gw[2][1]) + ")")
 
 
