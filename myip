@@ -79,11 +79,10 @@ def checkip(ipaddress):
 # Workaround until netifaces bug is fixed.
 def find_gw_workaround():
     my_gw = subprocess.run(["ip", "route", "get", internet_hostname], stdout=subprocess.PIPE)
-    my_gw = str(my_gw.stdout)
-    my_gw = my_gw.split(" ")
+    my_gw = re.split(r'\s+',str(my_gw.stdout))
     
     defaultgw = {}
-    defaultgw[2] = ( my_gw[5], my_gw[2] )
+    defaultgw[2] = ( my_gw[4], my_gw[2] )
 
     return defaultgw
 
